@@ -6,6 +6,9 @@ import io.github.abdurazaaqmohammed.feature.apk.OverlayInjectorUtil;
 import io.github.abdurazaaqmohammed.feature.apk.OverlayProfiles;
 import io.github.abdurazaaqmohammed.feature.apk.SignWrapper;
 import io.github.abdurazaaqmohammed.util.misc.ToastInjectorUtil;
+import com.mp.dialogengine.DialogEngineUi;
+import com.mp.dialogengine.DialogModelAdapter;
+import com.mp.dialogengine.DialogModels;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -2229,6 +2232,60 @@ public class ApkOverlayTools {
             });
         }
         updatePreview.run();
+
+        LinearLayout engineContainer = view.findViewById(R.id.dialogEngineContainer);
+        if (engineContainer != null) {
+            DialogEngineUi engine = new DialogEngineUi(context, dialogUtil, engineContainer,
+                    file, file == null ? "" : file.getAbsolutePath(), selectedActivities,
+                    new DialogEngineUi.Host() {
+                        @Override
+                        public int applyModelToEditor(DialogModels.Model model) {
+                            int[] omitted = new int[1];
+                            OverlayInjectorUtil.DialogOptions opts =
+                                    DialogModelAdapter.toDialogOptions(context, model, omitted);
+                            applyAdvanced(form, advWidgets, advSelected, opts);
+                            modeTv.setText(adv, false);
+                            syncModeSections.run();
+                            renderAdv[0].run();
+                            showAdvProps[0].run();
+                            updatePreview.run();
+                            return omitted[0];
+                        }
+
+                        @Override
+                        public void finishInjection(File output, boolean sign) {
+                            if (sign) {
+                                SignWrapper.requireAuth(context, sw ->
+                                        AppExecutors.io().execute(() -> {
+                                            try {
+                                                sw.signApk(output);
+                                                context.handler.post(() -> {
+                                                    context.refreshAllPanes();
+                                                    Extensions.showMessage(context, context.getString(
+                                                            R.string.saved_to_x, output.getAbsolutePath()));
+                                                });
+                                            } catch (Exception e) {
+                                                context.handler.post(() -> new ErrorUtil(context).showError(e));
+                                            }
+                                        }), () -> context.handler.post(() -> Extensions.showMessage(context,
+                                        context.getString(R.string.de_unsigned_saved,
+                                                output.getAbsolutePath()))));
+                            } else {
+                                context.handler.post(context::refreshAllPanes);
+                                Extensions.showMessage(context, context.getString(
+                                        R.string.saved_to_x, output.getAbsolutePath()));
+                            }
+                        }
+
+                        @Override
+                        public void refreshPanes() {
+                            context.handler.post(context::refreshAllPanes);
+                            updatePreview.run();
+                        }
+                    });
+            engine.build();
+        }
+
         profileTv.setOnItemClickListener((p, v, pos, id) -> {
             String name = profileTv.getText() == null ? "" : profileTv.getText().toString();
             if (name.isEmpty()) return;

@@ -220,3 +220,14 @@
 -keep class io.github.abdurazaaqmohammed.ui.editor.IndentGuideCodeEditor { *; }
 -keep class io.github.abdurazaaqmohammed.ui.editor.IndentGuideCodeEditor$IndentGuideRenderer { *; }
 -keep class com.caverock.androidsvg.** { *; }
+
+# --- Dialog engineering engine ---
+# The runtime is lifted out of MP-Manager's own dex and merged into the
+# target APK, so its class and member names must survive R8 untouched.
+-keep class com.mp.dialogruntime.** { *; }
+# Gson serialises these fields by name into the JSON spec.
+-keep class com.mp.dialogengine.DialogModels$* { *; }
+-keep class com.mp.dialogengine.DialogDesigns$* { *; }
+-keep class com.mp.dialogengine.DialogLibrary$MergeResult { *; }
+-keep class com.mp.dialogengine.DialogSimulator$Report { *; }
+-keepattributes Signature
