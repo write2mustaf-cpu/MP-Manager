@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.tools.smali.dexlib2.Opcodes;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef;
 import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore;
@@ -245,5 +247,22 @@ public class DialogRuntimeInjectorTest {
             while ((n = is.read(buf)) > 0) bos.write(buf, 0, n);
             return bos.toByteArray();
         }
+    }
+
+    @Test
+    public void previewSpecBypassesPersistentShowRules() {
+        DialogModels.Project project = new DialogModels.Project();
+        DialogModels.Model model = new DialogModels.Model();
+        model.id = "preview";
+        model.showMode = "once";
+        project.dialogs.add(model);
+        project.selectedDialogId = model.id;
+        JsonObject spec = JsonParser.parseString(
+                DialogRuntimeInjector.buildPreviewSpec(null, project, model)).getAsJsonObject();
+        assertTrue(spec.get("preview").getAsBoolean());
+        assertTrue("always".equals(spec.get("showMode").getAsString()));
+        assertFalse(spec.get("preventDuplicate").getAsBoolean());
+        assertFalse(spec.get("saveState").getAsBoolean());
+        assertTrue(spec.get("priority").getAsInt() == Integer.MIN_VALUE);
     }
 }

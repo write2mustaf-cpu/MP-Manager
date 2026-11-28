@@ -59,6 +59,7 @@ public final class DialogRuntime {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final Map<String, DialogRuntime> ACTIVE = new HashMap<>();
     private static int activePriority = Integer.MIN_VALUE;
+    private static DialogRuntime previewRuntime;
 
     private final Context ctx;
     private final JSONObject spec;
@@ -80,6 +81,7 @@ public final class DialogRuntime {
     private int actionDepth;
     private final boolean dark;
     private boolean nested;
+    private boolean preview;
 
     public static void showFromAsset(Context context, String assetName) {
         showFromAsset(context, assetName, false);
@@ -102,6 +104,35 @@ public final class DialogRuntime {
 
     public static void showFromJson(Context context, String json) {
         showFromJson(context, json, false);
+    }
+
+    public static void showPreview(Context context, String json) {
+        if (context == null || json == null || json.isEmpty()) return;
+        MAIN.post(() -> {
+            dismissPreviewInternal();
+            try {
+                DialogRuntime runtime = new DialogRuntime(context, new JSONObject(json));
+                runtime.preview = true;
+                runtime.show();
+                previewRuntime = runtime;
+            } catch (Throwable t) {
+                Log.e(TAG, "Cannot show preview", t);
+            }
+        });
+    }
+
+    public static void dismissPreview() {
+        MAIN.post(DialogRuntime::dismissPreviewInternal);
+    }
+
+    private static void dismissPreviewInternal() {
+        DialogRuntime runtime = previewRuntime;
+        previewRuntime = null;
+        if (runtime != null) runtime.dismiss();
+    }
+
+    private void dismiss() {
+        if (dialog != null && dialog.isShowing()) dialog.dismiss();
     }
 
     static void showFromJson(Context context, String json, boolean nested) {
@@ -198,18 +229,20 @@ public final class DialogRuntime {
     private void show() {
         String showMode = spec.optString("showMode", "always");
         SharedPreferences p = prefs();
-        if ("dont_show_again".equals(showMode) && p.getBoolean("dont_" + modelId, false)) return;
-        if ("once".equals(showMode) && p.getBoolean("once_" + modelId, false)) return;
-        if (!nested && spec.optBoolean("preventDuplicate", true)) {
-            DialogRuntime existing = ACTIVE.get(modelId);
-            if (existing != null && existing.dialog != null && existing.dialog.isShowing()) return;
+        if (!preview) {
+            if ("dont_show_again".equals(showMode) && p.getBoolean("dont_" + modelId, false)) return;
+            if ("once".equals(showMode) && p.getBoolean("once_" + modelId, false)) return;
+            if (!nested && spec.optBoolean("preventDuplicate", true)) {
+                DialogRuntime existing = ACTIVE.get(modelId);
+                if (existing != null && existing.dialog != null && existing.dialog.isShowing()) return;
+            }
+            if (!nested && spec.optInt("priority", 0) < activePriority) {
+                // A higher-priority dialog is already visible; do not stack over it.
+                return;
+            }
+            if ("dont_show_again".equals(showMode)) p.edit().putBoolean("dont_" + modelId, true).apply();
+            if ("once".equals(showMode)) p.edit().putBoolean("once_" + modelId, true).apply();
         }
-        if (!nested && spec.optInt("priority", 0) < activePriority) {
-            // A higher-priority dialog is already visible; do not stack over it.
-            return;
-        }
-        if ("dont_show_again".equals(showMode)) p.edit().putBoolean("dont_" + modelId, true).apply();
-        if ("once".equals(showMode)) p.edit().putBoolean("once_" + modelId, true).apply();
 
         dialog = new Dialog(ctx);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -296,10 +329,14 @@ public final class DialogRuntime {
         dialog.setOnDismissListener(d -> {
             dismissed = true;
             if (countdown != null) countdown.cancel();
-            ACTIVE.remove(modelId);
-            activePriority = Integer.MIN_VALUE;
-            persistState();
-            runEvents("close", "");
+            if (preview) {
+                if (previewRuntime == this) previewRuntime = null;
+            } else {
+                ACTIVE.remove(modelId);
+                activePriority = Integer.MIN_VALUE;
+                persistState();
+                runEvents("close", "");
+            }
         });
         if (countdownView != null) {
             countdownView.setText(String.valueOf(spec.optInt("countdownSeconds", 0)));
@@ -310,11 +347,13 @@ public final class DialogRuntime {
             Log.e(TAG, "dialog.show failed", t);
             return;
         }
-        ACTIVE.put(modelId, this);
-        activePriority = spec.optInt("priority", 0);
+        if (!preview) {
+            ACTIVE.put(modelId, this);
+            activePriority = spec.optInt("priority", 0);
+        }
         applyWindowSize(window);
         animateIn(card);
-        runEvents("open", "");
+        if (!preview) runEvents("open", "");
         startCountdown();
         DialogRuntimeActions.attachAll(this);
     }

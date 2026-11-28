@@ -7,4 +7,9 @@
     <dimen name="mp_content_padding">16dp</dimen>
     <dimen name="mp_toolbar_height">56dp</dimen>
     <dimen name="mp_elevation">4dp</dimen>
+    <dimen name="mp_space_4">4dp</dimen>
+    <dimen name="mp_space_8">8dp</dimen>
+    <dimen name="mp_space_12">12dp</dimen>
+    <dimen name="mp_space_16">16dp</dimen>
+    <dimen name="mp_touch_min">48dp</dimen>
 </resources>

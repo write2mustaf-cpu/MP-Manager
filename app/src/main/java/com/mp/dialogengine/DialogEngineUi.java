@@ -233,13 +233,13 @@ public final class DialogEngineUi {
         wrapper.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        wlp.topMargin = dp(4);
+        wlp.topMargin = dp(8);
         wrapper.setLayoutParams(wlp);
 
         LinearLayout header = new LinearLayout(activity);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setMinimumHeight(dp(44));
+        header.setMinimumHeight(touchMin());
         header.setPadding(dp(4), 0, dp(4), 0);
         TextView title = new TextView(activity);
         title.setText(titleRes);
@@ -263,7 +263,7 @@ public final class DialogEngineUi {
 
         LinearLayout content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(4), 0, dp(4), dp(6));
+        content.setPadding(dp(8), dp(4), dp(8), dp(12));
         content.setVisibility(View.GONE);
         wrapper.addView(content);
         groupContents.put(id, content);
@@ -398,13 +398,56 @@ public final class DialogEngineUi {
         return (int) (value * activity.getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    private int touchMin() {
+        return activity.getResources().getDimensionPixelSize(R.dimen.mp_touch_min);
+    }
+
+    private LinearLayout.LayoutParams spacedParams() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(4);
+        lp.bottomMargin = dp(4);
+        return lp;
+    }
+
     private void sectionLabel(LinearLayout parent, String text) {
         TextView tv = new TextView(activity);
         tv.setText(text);
         tv.setTextSize(12);
         tv.setAlpha(0.75f);
-        tv.setPadding(0, dp(8), 0, dp(2));
+        tv.setPadding(0, dp(12), 0, dp(4));
         parent.addView(tv);
+    }
+
+    private MaterialButton button(LinearLayout parent, String text,
+                                  View.OnClickListener listener) {
+        MaterialButton b = new MaterialButton(activity);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        b.setInsetTop(0);
+        b.setInsetBottom(0);
+        b.setMinHeight(touchMin());
+        b.setOnClickListener(listener);
+        parent.addView(b, spacedParams());
+        return b;
+    }
+
+    private MaterialButton compactButton(String text, View.OnClickListener listener) {
+        MaterialButton b = new MaterialButton(activity);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setGravity(Gravity.CENTER);
+        b.setInsetTop(0);
+        b.setInsetBottom(0);
+        b.setMinWidth(touchMin());
+        b.setMinHeight(touchMin());
+        b.setOnClickListener(listener);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginStart(dp(4));
+        b.setLayoutParams(lp);
+        return b;
     }
 
     private MaterialButton action(LinearLayout parent, int textRes, Runnable action) {
@@ -412,32 +455,20 @@ public final class DialogEngineUi {
     }
 
     private MaterialButton action(LinearLayout parent, String text, Runnable action) {
-        MaterialButton b = new MaterialButton(activity);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        b.setInsetTop(0);
-        b.setInsetBottom(0);
-        b.setMinHeight(dp(42));
-        b.setOnClickListener(v -> {
+        return button(parent, text, v -> {
             try {
                 action.run();
             } catch (Throwable t) {
                 showMessage(activity.getString(R.string.de_error), String.valueOf(t.getMessage()));
             }
         });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        b.setLayoutParams(lp);
-        parent.addView(b);
-        return b;
     }
 
     private TextInputEditText field(LinearLayout parent, int hintRes, String value, int inputType) {
         TextInputLayout box = UiFields.box(activity, activity.getString(hintRes));
         TextInputEditText edit = UiFields.field(box, inputType);
         if (value != null) edit.setText(value);
-        parent.addView(box);
+        parent.addView(box, spacedParams());
         return edit;
     }
 
@@ -445,7 +476,7 @@ public final class DialogEngineUi {
         TextInputLayout box = UiFields.box(activity, hint);
         TextInputEditText edit = UiFields.field(box, inputType);
         if (value != null) edit.setText(value);
-        parent.addView(box);
+        parent.addView(box, spacedParams());
         return edit;
     }
 
@@ -463,8 +494,13 @@ public final class DialogEngineUi {
             if (onPick != null) onPick.run();
         });
         box.addView(tv);
-        parent.addView(box);
+        parent.addView(box, spacedParams());
         return tv;
+    }
+
+    private void addSpacedSwitch(LinearLayout parent, MaterialSwitch sw) {
+        sw.setMinHeight(touchMin());
+        parent.addView(sw, spacedParams());
     }
 
     private MaterialSwitch switchRow(LinearLayout parent, int textRes, boolean checked,
@@ -472,8 +508,9 @@ public final class DialogEngineUi {
         MaterialSwitch sw = new MaterialSwitch(activity);
         sw.setText(textRes);
         sw.setChecked(checked);
+        sw.setMinHeight(touchMin());
         sw.setOnCheckedChangeListener((b, v) -> onChange.accept(v));
-        parent.addView(sw);
+        parent.addView(sw, spacedParams());
         return sw;
     }
 
@@ -509,19 +546,14 @@ public final class DialogEngineUi {
         ScrollView sv = new ScrollView(activity);
         LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(4), dp(4), dp(4), dp(4));
+        box.setPadding(dp(8), dp(4), dp(8), dp(4));
         AlertDialog[] holder = new AlertDialog[1];
         for (int i = 0; i < items.size(); i++) {
             final int index = i;
-            MaterialButton b = new MaterialButton(activity);
-            b.setText(items.get(i));
-            b.setAllCaps(false);
-            b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-            b.setOnClickListener(v -> {
+            button(box, items.get(i), v -> {
                 if (holder[0] != null) holder[0].dismiss();
                 onPick.accept(index);
             });
-            box.addView(b);
         }
         sv.addView(box);
         holder[0] = dialogUtil.getDialogBuilder()
@@ -559,15 +591,10 @@ public final class DialogEngineUi {
                 String label = items.get(i);
                 if (!q.isEmpty() && !label.toLowerCase(Locale.ROOT).contains(q)) continue;
                 final int index = i;
-                MaterialButton b = new MaterialButton(activity);
-                b.setText(label);
-                b.setAllCaps(false);
-                b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-                b.setOnClickListener(v -> {
+                button(list, label, v -> {
                     if (holder[0] != null) holder[0].dismiss();
                     onPick.accept(index);
                 });
-                list.addView(b);
             }
         };
         search.addTextChangedListener(new android.text.TextWatcher() {
@@ -768,7 +795,8 @@ public final class DialogEngineUi {
             return;
         }
         try {
-            DialogRuntime.showFromJson(activity, DialogRuntimeInjector.buildSpec(activity, project, model));
+            DialogRuntime.showPreview(activity,
+                    DialogRuntimeInjector.buildPreviewSpec(activity, project, model));
             if (Build.VERSION.SDK_INT < 31 && model.blurRadiusDp > 0) {
                 toast(R.string.de_ios_blur_note);
             }
@@ -814,7 +842,7 @@ public final class DialogEngineUi {
         MaterialSwitch sign = new MaterialSwitch(activity);
         sign.setText(R.string.de_autosign);
         sign.setChecked(true);
-        box.addView(sign);
+        addSpacedSwitch(box, sign);
         dialogUtil.getDialogBuilder()
                 .setTitle(R.string.de_inject)
                 .setView(box)
@@ -1026,7 +1054,7 @@ public final class DialogEngineUi {
                 MaterialSwitch stop = new MaterialSwitch(activity);
                 stop.setText(R.string.de_event_stop);
                 stop.setChecked(true);
-                box.addView(stop);
+                addSpacedSwitch(box, stop);
                 dialogUtil.getDialogBuilder()
                         .setTitle(R.string.de_add_event)
                         .setView(box)
@@ -1079,7 +1107,7 @@ public final class DialogEngineUi {
         MaterialSwitch evStop = new MaterialSwitch(activity);
         evStop.setText(R.string.de_event_stop);
         evStop.setChecked(e.stopOnFailure);
-        box.addView(evStop);
+        addSpacedSwitch(box, evStop);
         TextInputEditText evSkip = field(box, R.string.de_event_skip,
                 e.skipIf == null ? "" : e.skipIf, InputType.TYPE_CLASS_TEXT);
         TextInputEditText evDelay = field(box, R.string.de_event_delay,
@@ -1094,18 +1122,13 @@ public final class DialogEngineUi {
         if (e.actions != null) {
             for (Action a : e.actions) {
                 if (a == null) continue;
-                MaterialButton b = new MaterialButton(activity);
                 String label = a.type + (a.functionRef == null || a.functionRef.isEmpty()
                         ? "" : " · " + a.functionRef)
                         + (a.value == null || a.value.isEmpty() ? "" : " · " + a.value);
-                b.setText(label);
-                b.setAllCaps(false);
-                b.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-                b.setOnClickListener(v -> {
+                button(list, label, v -> {
                     if (holder[0] != null) holder[0].dismiss();
                     editAction(e, a);
                 });
-                list.addView(b);
             }
         }
         action(list, R.string.de_add_action, () -> {
@@ -1159,7 +1182,7 @@ public final class DialogEngineUi {
         MaterialSwitch stop = new MaterialSwitch(activity);
         stop.setText(R.string.de_event_stop);
         stop.setChecked(a.stopOnFailure);
-        box.addView(stop);
+        addSpacedSwitch(box, stop);
         final String[] functionId = {a.functionRef == null ? "" : a.functionRef};
         if (project.functions != null && !project.functions.isEmpty()) {
             List<FunctionRef> safe = new ArrayList<>();
@@ -1182,18 +1205,11 @@ public final class DialogEngineUi {
         } else {
             sectionLabel(box, activity.getString(R.string.de_no_functions));
         }
-        MaterialButton chooseNode = new MaterialButton(activity);
-        chooseNode.setText(R.string.de_event_node);
-        chooseNode.setAllCaps(false);
-        chooseNode.setOnClickListener(v -> chooseNode(activity.getString(R.string.de_event_node),
-                n -> {
+        button(box, activity.getString(R.string.de_event_node),
+                v -> chooseNode(activity.getString(R.string.de_event_node), n -> {
                     if (n != null) target.setText(n.id);
                 }));
-        box.addView(chooseNode);
-        MaterialButton chooseDialog = new MaterialButton(activity);
-        chooseDialog.setText(R.string.de_choose);
-        chooseDialog.setAllCaps(false);
-        chooseDialog.setOnClickListener(v -> {
+        button(box, activity.getString(R.string.de_choose), v -> {
             List<String> names = new ArrayList<>();
             List<Model> list = new ArrayList<>();
             if (project.dialogs != null) {
@@ -1207,7 +1223,6 @@ public final class DialogEngineUi {
             showChoice(activity.getString(R.string.de_group_recovery), names,
                     i -> target.setText(list.get(i).id));
         });
-        box.addView(chooseDialog);
         ScrollView scroll = new ScrollView(activity);
         scroll.addView(box);
         dialogUtil.getDialogBuilder()
@@ -1722,11 +1737,11 @@ public final class DialogEngineUi {
         MaterialSwitch visible = new MaterialSwitch(activity);
         visible.setText(R.string.de_component_visible);
         visible.setChecked(n.visible);
-        box.addView(visible);
+        addSpacedSwitch(box, visible);
         MaterialSwitch enabled = new MaterialSwitch(activity);
         enabled.setText(R.string.de_component_enabled);
         enabled.setChecked(n.enabled);
-        box.addView(enabled);
+        addSpacedSwitch(box, enabled);
         TextInputEditText alpha = field(box, R.string.de_value,
                 String.valueOf(n.alpha), InputType.TYPE_CLASS_NUMBER
                         | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -1745,10 +1760,7 @@ public final class DialogEngineUi {
         if ("card".equals(n.kind) || "collapsible".equals(n.kind)
                 || "toolbar".equals(n.kind) || "pages".equals(n.kind)
                 || "page".equals(n.kind)) {
-            MaterialButton child = new MaterialButton(activity);
-            child.setText(R.string.de_add_child);
-            child.setAllCaps(false);
-            child.setOnClickListener(v -> {
+            button(box, activity.getString(R.string.de_add_child), v -> {
                 Node parent = n;
                 if ("pages".equals(parent.kind)) {
                     Node page = new Node();
@@ -1772,7 +1784,6 @@ public final class DialogEngineUi {
                             });
                 }
             });
-            box.addView(child);
         }
         ScrollView scroll = new ScrollView(activity);
         scroll.addView(box);
@@ -1831,10 +1842,7 @@ public final class DialogEngineUi {
             label.setLayoutParams(new LinearLayout.LayoutParams(0,
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             row.addView(label);
-            MaterialButton up = new MaterialButton(activity);
-            up.setText("↑");
-            up.setMinWidth(0);
-            up.setOnClickListener(v -> {
+            MaterialButton up = compactButton("↑", v -> {
                 if (index > 0) {
                     Collections.swap(model.nodes, index, index - 1);
                     save();
@@ -1842,10 +1850,7 @@ public final class DialogEngineUi {
                     orderComponents();
                 }
             });
-            MaterialButton down = new MaterialButton(activity);
-            down.setText("↓");
-            down.setMinWidth(0);
-            down.setOnClickListener(v -> {
+            MaterialButton down = compactButton("↓", v -> {
                 if (index < model.nodes.size() - 1) {
                     Collections.swap(model.nodes, index, index + 1);
                     save();
@@ -1853,10 +1858,7 @@ public final class DialogEngineUi {
                     orderComponents();
                 }
             });
-            MaterialButton del = new MaterialButton(activity);
-            del.setText(R.string.de_delete);
-            del.setMinWidth(0);
-            del.setOnClickListener(v -> {
+            MaterialButton del = compactButton(activity.getString(R.string.de_delete), v -> {
                 deleteNode(n);
                 if (holder[0] != null) holder[0].dismiss();
                 orderComponents();
@@ -1864,7 +1866,11 @@ public final class DialogEngineUi {
             row.addView(up);
             row.addView(down);
             row.addView(del);
-            box.addView(row);
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rowLp.topMargin = dp(4);
+            rowLp.bottomMargin = dp(4);
+            box.addView(row, rowLp);
         }
         holder[0] = dialogUtil.getDialogBuilder()
                 .setTitle(R.string.de_order_components)
@@ -2266,15 +2272,15 @@ public final class DialogEngineUi {
         MaterialSwitch sheet = new MaterialSwitch(activity);
         sheet.setText(R.string.de_ios_bottom_sheet);
         sheet.setChecked(model.bottomSheet);
-        box.addView(sheet);
+        addSpacedSwitch(box, sheet);
         MaterialSwitch full = new MaterialSwitch(activity);
         full.setText(R.string.de_ios_full_width);
         full.setChecked(model.fullWidth);
-        box.addView(full);
+        addSpacedSwitch(box, full);
         MaterialSwitch glass = new MaterialSwitch(activity);
         glass.setText(R.string.de_ios_glass);
         glass.setChecked(model.glass);
-        box.addView(glass);
+        addSpacedSwitch(box, glass);
         ScrollView scroll = new ScrollView(activity);
         scroll.addView(box);
         dialogUtil.getDialogBuilder()

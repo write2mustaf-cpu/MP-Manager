@@ -36,7 +36,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="8dp"
                 android:hint="@string/profiles">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -50,7 +50,7 @@
                 android:id="@+id/overlayProfileSave"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="8dp"
                 android:text="@string/save" />
 
             <com.google.android.material.button.MaterialButton
@@ -130,7 +130,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:hint="@string/x_offset">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -146,7 +146,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:hint="@string/y_offset">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -249,7 +249,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:hint="@string/view_text">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -264,7 +264,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:hint="@string/action">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -324,7 +324,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:hint="@string/text_empty_none">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -338,7 +338,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:hint="@string/action">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -398,7 +398,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:hint="@string/text_empty_none">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -412,7 +412,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:hint="@string/action">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -515,7 +515,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginEnd="4dp"
+                        android:layout_marginEnd="8dp"
                         android:text="@string/bg_color_label" />
 
                     <com.google.android.material.button.MaterialButton
@@ -523,7 +523,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="4dp"
+                        android:layout_marginStart="8dp"
                         android:text="@string/gradient_none" />
                 </LinearLayout>
 
@@ -569,7 +569,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginEnd="4dp"
+                        android:layout_marginEnd="8dp"
                         android:hint="@string/corner_radius_dp">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -586,7 +586,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="4dp"
+                        android:layout_marginStart="8dp"
                         android:hint="@string/border_width_dp">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -700,7 +700,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:hint="@string/title_color">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -887,6 +887,41 @@
                     android:textSize="15sp" />
 
                 <LinearLayout
+                    android:id="@+id/overlayDlgPreviewButtons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/overlayDlgPreviewNeg"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:layout_marginEnd="8dp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/overlayDlgPreviewNeu"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:layout_marginEnd="8dp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/overlayDlgPreviewPos"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/overlayDlgPreviewCountdownRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -945,7 +980,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:text="@string/view_text" />
 
                 <com.google.android.material.button.MaterialButton
@@ -953,8 +988,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
                     android:text="@string/image" />
 
                 <com.google.android.material.button.MaterialButton
@@ -962,7 +997,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:text="@string/button" />
             </LinearLayout>
 
@@ -977,14 +1012,14 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="8dp"
                     android:text="Dialog font: Default" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/advFontApplyAllBtn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="8dp"
                     android:text="@string/to_all" />
             </LinearLayout>
 

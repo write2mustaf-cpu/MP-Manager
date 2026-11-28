@@ -306,6 +306,9 @@ public class ApkOverlayTools {
         ImageView dlgPreviewImage;
         TextView dlgPreviewVideoTv;
         LinearLayout dlgPreviewBox;
+        MaterialButton dlgPreviewPos;
+        MaterialButton dlgPreviewNeg;
+        MaterialButton dlgPreviewNeu;
         MaterialSwitch bgSwitch;
         MaterialSwitch animSwitch;
         MaterialButton bg1Btn;
@@ -395,6 +398,9 @@ public class ApkOverlayTools {
         f.dlgPreviewImage = view.findViewById(R.id.overlayDlgPreviewImage);
         f.dlgPreviewVideoTv = view.findViewById(R.id.overlayDlgPreviewVideoTv);
         f.dlgPreviewBox = view.findViewById(R.id.overlayDlgPreviewBox);
+        f.dlgPreviewPos = view.findViewById(R.id.overlayDlgPreviewPos);
+        f.dlgPreviewNeg = view.findViewById(R.id.overlayDlgPreviewNeg);
+        f.dlgPreviewNeu = view.findViewById(R.id.overlayDlgPreviewNeu);
         f.bgSwitch = view.findViewById(R.id.overlayBgSwitch);
         f.animSwitch = view.findViewById(R.id.overlayAnimSwitch);
         f.bg1Btn = view.findViewById(R.id.overlayBg1Btn);
@@ -1072,6 +1078,20 @@ public class ApkOverlayTools {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    private void updatePreviewButtons(OverlayForm f, String positive, String negative, String neutral) {
+        setPreviewButton(f.dlgPreviewPos, positive);
+        setPreviewButton(f.dlgPreviewNeg, negative);
+        setPreviewButton(f.dlgPreviewNeu, neutral);
+    }
+
+    private void setPreviewButton(MaterialButton button, String text) {
+        if (button == null) return;
+        String label = text == null ? "" : text.trim();
+        button.setText(label);
+        button.setAllCaps(false);
+        button.setVisibility(label.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void updateStylePreview(OverlayForm f) {
@@ -2133,6 +2153,8 @@ public class ApkOverlayTools {
                     }
                     updateStylePreview(form);
                     updatePreviewImage(form);
+                    updatePreviewButtons(form,
+                            textOf(dlgPosInput), textOf(dlgNegInput), textOf(dlgNeuInput));
                     if (form.countdownSwitch.isChecked()) {
                         int sec = 3;
                         try {

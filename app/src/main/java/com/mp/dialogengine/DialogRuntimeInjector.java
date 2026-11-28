@@ -23,6 +23,7 @@ import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore;
 import com.android.tools.smali.dexlib2.writer.pool.DexPool;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.github.abdurazaaqmohammed.MPManager.R;
 import com.reandroid.apk.APKLogger;
 
@@ -94,6 +95,17 @@ public final class DialogRuntimeInjector {
 
     public static String buildSpec(DialogModels.Project project, DialogModels.Model model) {
         return buildSpec(null, project, model);
+    }
+
+    public static String buildPreviewSpec(Context context, DialogModels.Project project,
+                                         DialogModels.Model model) {
+        JsonObject spec = JsonParser.parseString(buildSpec(context, project, model)).getAsJsonObject();
+        spec.addProperty("showMode", "always");
+        spec.addProperty("preventDuplicate", false);
+        spec.addProperty("saveState", false);
+        spec.addProperty("priority", Integer.MIN_VALUE);
+        spec.addProperty("preview", true);
+        return spec.toString();
     }
 
     public static String buildSpec(Context context, DialogModels.Project project, DialogModels.Model model) {
