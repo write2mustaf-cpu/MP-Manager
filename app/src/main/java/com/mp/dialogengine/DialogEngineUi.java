@@ -700,6 +700,7 @@ public final class DialogEngineUi {
         action(c, R.string.de_backup, this::backupApk);
         action(c, R.string.de_restore, this::showRestore);
         action(c, R.string.de_compare, this::showCompare);
+        action(c, R.string.de_project_history, this::showProjectHistory);
         action(c, R.string.de_save_project, this::saveProjectNow);
         action(c, R.string.de_load_project, this::loadProjectNow);
     }
@@ -924,6 +925,41 @@ public final class DialogEngineUi {
             if (apk == null) return;
             String diff = DialogBackupStore.diff(new File(b.backupPath), apk);
             showText(activity.getString(R.string.de_compare), diff);
+        });
+    }
+
+    private void showProjectHistory() {
+        List<File> history = DialogLibrary.projectHistory(activity);
+        if (history.isEmpty()) {
+            toast(R.string.de_backup_empty);
+            return;
+        }
+        List<String> labels = new ArrayList<>();
+        for (File f : history) {
+            labels.add(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(new java.util.Date(f.lastModified())) + " · " + f.getName());
+        }
+        showChoice(activity.getString(R.string.de_project_history), labels, i -> {
+            File snapshot = history.get(i);
+            try {
+                Project old = DialogLibrary.loadProjectSnapshot(snapshot);
+                if (old == null) throw new Exception("Invalid snapshot");
+                String diff = DialogLibrary.diffProject(project, old);
+                dialogUtil.getDialogBuilder()
+                        .setTitle(R.string.de_project_history)
+                        .setMessage(diff)
+                        .setNegativeButton(R.string.de_close, null)
+                        .setPositiveButton(R.string.de_restore, (d, w) -> {
+                            project = old;
+                            model = project.selected();
+                            save();
+                            updateStatuses();
+                            if (model != null) host.applyModelToEditor(model);
+                            toast(R.string.de_restored, snapshot.getName());
+                        }).show();
+            } catch (Throwable t) {
+                showMessage(activity.getString(R.string.de_error), String.valueOf(t.getMessage()));
+            }
         });
     }
 
@@ -1500,6 +1536,7 @@ public final class DialogEngineUi {
     private void buildComponents(LinearLayout c) {
         sectionLabel(c, activity.getString(R.string.de_group_components));
         action(c, R.string.de_add_component, this::addComponent);
+        action(c, R.string.de_add_child, this::addChild);
         action(c, R.string.de_edit_component, this::editComponent);
         action(c, R.string.de_order_components, this::orderComponents);
     }
@@ -1524,6 +1561,52 @@ public final class DialogEngineUi {
                     }
                     editNode(n);
                 });
+    }
+
+    private void addChild() {
+        if (model == null) {
+            toast(R.string.de_no_model);
+            return;
+        }
+        List<Node> containers = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        for (Node n : flatten(model.nodes)) {
+            if (n == null) continue;
+            if ("card".equals(n.kind) || "collapsible".equals(n.kind)
+                    || "toolbar".equals(n.kind) || "pages".equals(n.kind)
+                    || "page".equals(n.kind)) {
+                containers.add(n);
+                labels.add(nodeLabel(n));
+            }
+        }
+        if (containers.isEmpty()) {
+            toast(R.string.de_none);
+            return;
+        }
+        showChoice(activity.getString(R.string.de_parent), labels, pi -> {
+            Node parent = containers.get(pi);
+            if ("pages".equals(parent.kind)) {
+                Node page = new Node();
+                page.kind = "page";
+                page.text = activity.getString(R.string.de_page) + " "
+                        + ((parent.children == null ? 0 : parent.children.size()) + 1);
+                if (parent.children == null) parent.children = new ArrayList<>();
+                parent.children.add(page);
+                save();
+                updateStatuses();
+                editNode(page);
+                return;
+            }
+            showChoice(activity.getString(R.string.de_component_kind),
+                    Arrays.asList(COMPONENT_KINDS), ki -> {
+                        Node n = defaultNode(COMPONENT_KINDS[ki]);
+                        if (parent.children == null) parent.children = new ArrayList<>();
+                        parent.children.add(n);
+                        save();
+                        updateStatuses();
+                        editNode(n);
+                    });
+        });
     }
 
     private Node defaultNode(String kind) {
@@ -1659,6 +1742,38 @@ public final class DialogEngineUi {
             progress = field(box, R.string.de_component_progress,
                     String.valueOf(n.progress), InputType.TYPE_CLASS_NUMBER);
         }
+        if ("card".equals(n.kind) || "collapsible".equals(n.kind)
+                || "toolbar".equals(n.kind) || "pages".equals(n.kind)
+                || "page".equals(n.kind)) {
+            MaterialButton child = new MaterialButton(activity);
+            child.setText(R.string.de_add_child);
+            child.setAllCaps(false);
+            child.setOnClickListener(v -> {
+                Node parent = n;
+                if ("pages".equals(parent.kind)) {
+                    Node page = new Node();
+                    page.kind = "page";
+                    page.text = activity.getString(R.string.de_page) + " "
+                            + ((parent.children == null ? 0 : parent.children.size()) + 1);
+                    if (parent.children == null) parent.children = new ArrayList<>();
+                    parent.children.add(page);
+                    save();
+                    toast(R.string.de_added);
+                    editNode(page);
+                } else {
+                    showChoice(activity.getString(R.string.de_component_kind),
+                            Arrays.asList(COMPONENT_KINDS), ki -> {
+                                Node c = defaultNode(COMPONENT_KINDS[ki]);
+                                if (parent.children == null) parent.children = new ArrayList<>();
+                                parent.children.add(c);
+                                save();
+                                toast(R.string.de_added);
+                                editNode(c);
+                            });
+                }
+            });
+            box.addView(child);
+        }
         ScrollView scroll = new ScrollView(activity);
         scroll.addView(box);
         final TextInputEditText fOptions = options;
@@ -1760,13 +1875,23 @@ public final class DialogEngineUi {
 
     private void deleteNode(Node n) {
         if (n == null || model == null) return;
+        Set<String> ids = new HashSet<>();
+        collectIds(n, ids);
         removeNode(model.nodes, n);
         if (model.events != null) {
-            model.events.removeIf(e -> e != null && n.id.equals(e.nodeId));
+            model.events.removeIf(e -> e != null && ids.contains(e.nodeId));
         }
         save();
         updateStatuses();
         toast(R.string.de_deleted);
+    }
+
+    private void collectIds(Node n, Set<String> out) {
+        if (n == null) return;
+        if (n.id != null) out.add(n.id);
+        if (n.children != null) {
+            for (Node c : n.children) collectIds(c, out);
+        }
     }
 
     private boolean removeNode(List<Node> list, Node target) {
@@ -2434,8 +2559,16 @@ public final class DialogEngineUi {
             return;
         }
         List<String> labels = new ArrayList<>();
-        for (Model m : templates) labels.add(m.name + " · " + m.id);
-        showChoice(activity.getString(R.string.de_lib_load), labels, i -> {
+        for (Model m : templates) {
+            StringBuilder hay = new StringBuilder();
+            hay.append(m.name).append(' ').append(m.id).append(' ').append(m.title)
+                    .append(' ').append(m.message);
+            for (Node n : flatten(m.nodes)) {
+                if (n != null) hay.append(' ').append(n.text).append(' ').append(n.id);
+            }
+            labels.add(m.name + " · " + m.id + "\n" + trunc(hay.toString(), 120));
+        }
+        showSearchList(activity.getString(R.string.de_lib_load), labels, i -> {
             Model m = DialogJson.cloneModel(templates.get(i));
             setModel(m);
             host.applyModelToEditor(m);
@@ -2552,13 +2685,35 @@ public final class DialogEngineUi {
     }
 
     private void showRelations() {
-        List<String> relations = DialogLibrary.relations(project);
-        if (relations.isEmpty()) {
+        DialogRelationsView graph = new DialogRelationsView(activity, project);
+        if (graph.boxCount() == 0) {
             showMessage(activity.getString(R.string.de_lib_relations),
                     activity.getString(R.string.de_none));
             return;
         }
-        showText(activity.getString(R.string.de_lib_relations), TextUtils.join("\n", relations));
+        final AlertDialog[] holder = new AlertDialog[1];
+        graph.setOnNodeClick(id -> {
+            Model target = null;
+            if (project.dialogs != null) {
+                for (Model m : project.dialogs) {
+                    if (m != null && id.equals(m.id)) {
+                        target = m;
+                        break;
+                    }
+                }
+            }
+            if (target != null) {
+                if (holder[0] != null) holder[0].dismiss();
+                setModel(target);
+                host.applyModelToEditor(target);
+                toast(R.string.de_selected, target.name);
+            }
+        });
+        holder[0] = dialogUtil.getDialogBuilder()
+                .setTitle(R.string.de_lib_relations)
+                .setView(graph)
+                .setNegativeButton(R.string.de_close, null)
+                .show();
     }
 
     // ---------------- helpers ----------------

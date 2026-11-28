@@ -226,4 +226,8 @@
     <string name="de_prevent_close">Prevent closing while an action is running</string>
     <string name="de_before">Before</string>
     <string name="de_after">After</string>
+    <string name="de_add_child">Add child component</string>
+    <string name="de_parent">Parent component</string>
+    <string name="de_page">Page</string>
+    <string name="de_project_history">Project history</string>
 </resources>

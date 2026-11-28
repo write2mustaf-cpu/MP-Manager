@@ -121,6 +121,14 @@ public final class DialogRuntimeInjector {
             }
         }
         spec.add("functions", functions);
+        JsonObject dialogs = new JsonObject();
+        if (project != null && project.dialogs != null) {
+            for (DialogModels.Model d : project.dialogs) {
+                if (d == null || d.id == null || d.id.isEmpty() || d.id.equals(model.id)) continue;
+                dialogs.add(d.id, DialogJson.gson().toJsonTree(d).getAsJsonObject());
+            }
+        }
+        spec.add("dialogs", dialogs);
         if (!spec.has("metadata")) spec.add("metadata", new JsonObject());
         JsonObject strings = new JsonObject();
         strings.addProperty("search", context == null ? "Search"

@@ -81,12 +81,51 @@ public final class DialogLibrary {
         File f = new File(dir, "project.json");
         if (f.isFile()) {
             try {
-                DialogJson.writeFile(new File(dir, "project.json.bak"), DialogJson.readFile(f));
+                String previous = DialogJson.readFile(f);
+                DialogJson.writeFile(new File(dir, "project.json.bak"), previous);
+                File hist = new File(dir, "history");
+                //noinspection ResultOfMethodCallIgnored
+                hist.mkdirs();
+                DialogJson.writeFile(new File(hist, "project_" + System.currentTimeMillis() + ".json"),
+                        previous);
+                rotateHistory(hist);
             } catch (Exception ignored) {
             }
         }
         DialogJson.writeFile(f, DialogJson.toJson(project));
         return f;
+    }
+
+    private static void rotateHistory(File dir) {
+        File[] files = dir.listFiles((d, name) -> name.startsWith("project_") && name.endsWith(".json"));
+        if (files == null || files.length <= 30) return;
+        java.util.Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+        for (int i = 0; i < files.length - 30; i++) //noinspection ResultOfMethodCallIgnored
+            files[i].delete();
+    }
+
+    public static List<File> projectHistory(Context context) {
+        File dir = new File(new File(root(context), "projects"), "history");
+        File[] files = dir.listFiles((d, name) -> name.startsWith("project_") && name.endsWith(".json"));
+        List<File> out = new ArrayList<>();
+        if (files != null) {
+            java.util.Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+            for (File f : files) if (f.isFile()) out.add(f);
+        }
+        return out;
+    }
+
+    public static Project loadProjectSnapshot(File file) throws IOException {
+        return DialogJson.fromJson(DialogJson.readFile(file), Project.class);
+    }
+
+    public static String diffProject(Project current, Project previous) {
+        try {
+            return DialogBackupStore.diffText(DialogJson.toJson(previous), DialogJson.toJson(current),
+                    "previous", "current");
+        } catch (Throwable t) {
+            return "diff failed: " + t.getMessage();
+        }
     }
 
     public static Project loadProject(Context context) {

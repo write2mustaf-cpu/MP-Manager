@@ -98,6 +98,21 @@ public final class DialogBackupStore {
         }
     }
 
+    public static String diffText(String a, String b, String leftName, String rightName) {
+        if (a == null) a = "";
+        if (b == null) b = "";
+        List<String> al = Arrays.asList(a.split("\r?\n", -1));
+        List<String> bl = Arrays.asList(b.split("\r?\n", -1));
+        boolean aNl = a.endsWith("\n");
+        boolean bNl = b.endsWith("\n");
+        List<io.github.abdurazaaqmohammed.util.text.TextDiffEngine.DiffLine> lines =
+                io.github.abdurazaaqmohammed.util.text.TextDiffEngine.buildDiff(al, aNl, bl, bNl,
+                        io.github.abdurazaaqmohammed.util.text.TextDiffEngine.IgnoreMode.NONE, true);
+        String diff = io.github.abdurazaaqmohammed.util.text.TextDiffEngine.toUnifiedDiff(
+                lines, al, bl, leftName, rightName, aNl, bNl);
+        return diff.isEmpty() ? "identical" : diff;
+    }
+
     /** Unified diff for text sources; binary files fall back to hash/size. */
     public static String diff(File left, File right) {
         if (left == null || right == null) return "";

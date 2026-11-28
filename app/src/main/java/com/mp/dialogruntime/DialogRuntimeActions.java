@@ -266,7 +266,9 @@ final class DialogRuntimeActions {
                     if (d.startsWith("{")) {
                         DialogRuntime.showFromJson(rt.ctx(), d);
                     } else if (!d.isEmpty()) {
-                        DialogRuntime.showFromAsset(rt.ctx(), d);
+                        String nested = rt.dialogSpec(d);
+                        if (nested != null) DialogRuntime.showFromJson(rt.ctx(), nested, true);
+                        else DialogRuntime.showFromAsset(rt.ctx(), d, true);
                     }
                     return true;
                 }

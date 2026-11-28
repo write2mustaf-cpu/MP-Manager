@@ -79,8 +79,13 @@ public final class DialogRuntime {
     private int dragStartY;
     private int actionDepth;
     private final boolean dark;
+    private boolean nested;
 
     public static void showFromAsset(Context context, String assetName) {
+        showFromAsset(context, assetName, false);
+    }
+
+    static void showFromAsset(Context context, String assetName, boolean nested) {
         if (context == null || assetName == null || assetName.isEmpty()) return;
         try {
             java.io.InputStream in = context.getAssets().open(assetName);
@@ -89,19 +94,24 @@ public final class DialogRuntime {
             int n;
             while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
             in.close();
-            showFromJson(context, new String(bos.toByteArray(), "UTF-8"));
+            showFromJson(context, new String(bos.toByteArray(), "UTF-8"), nested);
         } catch (Throwable t) {
             Log.e(TAG, "Cannot read dialog asset " + assetName, t);
         }
     }
 
     public static void showFromJson(Context context, String json) {
+        showFromJson(context, json, false);
+    }
+
+    static void showFromJson(Context context, String json, boolean nested) {
         if (context == null || json == null || json.isEmpty()) return;
         final Context app = context.getApplicationContext() != null
                 ? context.getApplicationContext() : context;
         MAIN.post(() -> {
             try {
                 DialogRuntime runtime = new DialogRuntime(context, new JSONObject(json));
+                runtime.nested = nested;
                 runtime.show();
             } catch (Throwable t) {
                 Log.e(TAG, "Cannot show dialog", t);
@@ -190,11 +200,11 @@ public final class DialogRuntime {
         SharedPreferences p = prefs();
         if ("dont_show_again".equals(showMode) && p.getBoolean("dont_" + modelId, false)) return;
         if ("once".equals(showMode) && p.getBoolean("once_" + modelId, false)) return;
-        if (spec.optBoolean("preventDuplicate", true)) {
+        if (!nested && spec.optBoolean("preventDuplicate", true)) {
             DialogRuntime existing = ACTIVE.get(modelId);
             if (existing != null && existing.dialog != null && existing.dialog.isShowing()) return;
         }
-        if (spec.optInt("priority", 0) < activePriority) {
+        if (!nested && spec.optInt("priority", 0) < activePriority) {
             // A higher-priority dialog is already visible; do not stack over it.
             return;
         }
@@ -1019,6 +1029,34 @@ public final class DialogRuntime {
             out = out.substring(0, start) + value + out.substring(end + 1);
         }
         return out;
+    }
+
+    boolean hasDialog(String id) {
+        if (id == null) return false;
+        android.content.res.Resources res = ctx.getResources();
+        try {
+            int rid = res.getIdentifier("mp_dialog_" + id.replaceAll("[^A-Za-z0-9_.-]", "_"),
+                    "raw", ctx.getPackageName());
+            if (rid != 0) return true;
+        } catch (Throwable ignored) {
+        }
+        return spec.optJSONObject("dialogs") != null
+                && spec.optJSONObject("dialogs").has(id);
+    }
+
+    String dialogSpec(String id) {
+        JSONObject d = spec.optJSONObject("dialogs") == null ? null
+                : spec.optJSONObject("dialogs").optJSONObject(id);
+        if (d == null) return null;
+        try {
+            JSONObject copy = new JSONObject(d.toString());
+            copy.put("functions", spec.optJSONArray("functions"));
+            copy.put("strings", spec.optJSONObject("strings"));
+            if (!copy.has("dialogs")) copy.put("dialogs", spec.optJSONObject("dialogs"));
+            return copy.toString();
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     void runEvents(String trigger, String nodeId) {

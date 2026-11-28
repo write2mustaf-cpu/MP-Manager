@@ -226,4 +226,8 @@
     <string name="de_prevent_close">منع الإغلاق أثناء تنفيذ إجراء</string>
     <string name="de_before">قبل</string>
     <string name="de_after">بعد</string>
+    <string name="de_add_child">إضافة عنصر فرعي</string>
+    <string name="de_parent">العنصر الأب</string>
+    <string name="de_page">صفحة</string>
+    <string name="de_project_history">سجل المشروع</string>
 </resources>

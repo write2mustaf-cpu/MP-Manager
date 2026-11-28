@@ -193,6 +193,91 @@ public class DialogEngineTest {
     }
 
     @Test
+    public void nestedChildrenSurviveJsonRoundTrip() {
+        Model model = new Model();
+        Node card = new Node();
+        card.kind = "card";
+        Node title = new Node();
+        title.kind = "title";
+        title.text = "Inside";
+        card.children.add(title);
+        model.nodes.add(card);
+        Model back = DialogJson.fromJson(DialogJson.toJson(model), Model.class);
+        assertNotNull(back);
+        assertEquals(1, back.nodes.size());
+        assertEquals(1, back.nodes.get(0).children.size());
+        assertEquals("Inside", back.nodes.get(0).children.get(0).text);
+    }
+
+    @Test
+    public void specCarriesNestedDialogsForOpenById() {
+        Project project = new Project();
+        Model root = new Model();
+        root.name = "Root";
+        Model nested = new Model();
+        nested.name = "Nested";
+        nested.title = "Second";
+        project.dialogs.add(root);
+        project.dialogs.add(nested);
+        Event e = new Event();
+        e.trigger = "click";
+        Action a = new Action();
+        a.type = "open_dialog";
+        a.target = nested.id;
+        e.actions.add(a);
+        root.events.add(e);
+        com.google.gson.JsonObject spec = com.google.gson.JsonParser.parseString(
+                DialogRuntimeInjector.buildSpec(project, root)).getAsJsonObject();
+        assertTrue(spec.has("dialogs"));
+        assertTrue(spec.getAsJsonObject("dialogs").has(nested.id));
+        assertEquals("Second", spec.getAsJsonObject("dialogs").getAsJsonObject(nested.id)
+                .get("title").getAsString());
+    }
+
+    @Test
+    public void analyzerFindsDuplicateIdsInsideNestedChildren() {
+        Project project = new Project();
+        Model model = new Model();
+        Node card = new Node();
+        card.kind = "card";
+        Node a = new Node();
+        a.id = "dup";
+        a.kind = "text";
+        Node b = new Node();
+        b.id = "dup";
+        b.kind = "text";
+        card.children.add(a);
+        card.children.add(b);
+        model.nodes.add(card);
+        List<Finding> findings = DialogAnalyzer.analyze(project, model);
+        boolean found = false;
+        for (Finding f : findings) if ("duplicate_node_id".equals(f.type)) found = true;
+        assertTrue(found);
+    }
+
+    @Test
+    public void simulatorAcceptsNestedCardAndPages() {
+        Project project = new Project();
+        Model model = new Model();
+        Node card = new Node();
+        card.kind = "card";
+        Node button = new Node();
+        button.kind = "button";
+        button.text = "OK";
+        card.children.add(button);
+        model.nodes.add(card);
+        Event e = new Event();
+        e.trigger = "click";
+        e.nodeId = button.id;
+        Action a = new Action();
+        a.type = "dismiss";
+        e.actions.add(a);
+        model.events.add(e);
+        DialogSimulator.Report report = DialogSimulator.simulate(project, model);
+        assertEquals(0, report.failed);
+    }
+
+    @Test
     public void hasAtLeastTwentyDesigns() {
         assertTrue(DialogDesigns.all().size() >= 20);
     }
